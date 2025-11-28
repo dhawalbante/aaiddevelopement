@@ -42,10 +42,16 @@ const createMember = asyncHandler(async (req, res) => {
   try {
     const { fullName, designation, department, social, isActive, priority } = req.body;
 
-    // Handle file upload
+    // Handle file upload using express-fileupload
     let profileImage = '';
-    if (req.file) {
-      profileImage = `/uploads/members/${req.file.filename}`;
+    if (req.files && req.files.profileImage) {
+      const file = req.files.profileImage;
+      const ext = path.extname(file.name);
+      const filename = `member-${Date.now()}${ext}`;
+      const filePath = path.join(__dirname, '../uploads/members', filename);
+
+      await file.mv(filePath);
+      profileImage = `/uploads/members/${filename}`;
     }
 
     const member = new Member({
@@ -88,8 +94,8 @@ const updateMember = asyncHandler(async (req, res) => {
 
     const { fullName, designation, department, social, isActive, priority } = req.body;
 
-    // Handle file upload
-    if (req.file) {
+    // Handle file upload using express-fileupload
+    if (req.files && req.files.profileImage) {
       // Remove old image if exists
       if (member.profileImage) {
         const oldImagePath = path.join(__dirname, '..', member.profileImage);
@@ -97,7 +103,15 @@ const updateMember = asyncHandler(async (req, res) => {
           fs.unlinkSync(oldImagePath);
         }
       }
-      member.profileImage = `/uploads/members/${req.file.filename}`;
+
+      // Save new file
+      const file = req.files.profileImage;
+      const ext = path.extname(file.name);
+      const filename = `member-${Date.now()}${ext}`;
+      const filePath = path.join(__dirname, '../uploads/members', filename);
+
+      await file.mv(filePath);
+      member.profileImage = `/uploads/members/${filename}`;
     }
 
     member.fullName = fullName || member.fullName;
